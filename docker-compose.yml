@@ -4,7 +4,7 @@ services:
     image: nasih-service:dev
     ports: ["8000:8000"]
     environment:
-      NASIH_MODEL_PATH: models/credit_model.joblib
+      NASIH_MODEL_PATH: models/credit_model.json
       NASIH_REDIS_URL: redis://audit-store:6379/0
     depends_on:
       audit-store:

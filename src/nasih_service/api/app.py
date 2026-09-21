@@ -7,8 +7,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from nasih_service.adapters.linear_model import LinearModel
 from nasih_service.adapters.redis_audit import RedisAuditStore
-from nasih_service.adapters.sklearn_model import SklearnModel
 from nasih_service.config import Settings
 from nasih_service.logging_setup import configure_logging, set_trace_id
 from nasih_service.service.scorer import CreditScorer
@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     settings = Settings()
     configure_logging(settings.log_level)
     t0 = time.perf_counter()
-    model = SklearnModel.load(settings.model_path)
+    model = LinearModel.load(settings.model_path)
     # Warm up so the first real request doesn't pay lazy-init cost.
     model.predict_proba({"cash_flow_log": 0.0, "age_months": 0.0})
     audit_store = RedisAuditStore.from_url(settings.redis_url, settings.audit_ttl_seconds)

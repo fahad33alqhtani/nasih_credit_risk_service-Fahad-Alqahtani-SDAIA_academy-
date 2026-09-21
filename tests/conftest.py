@@ -12,7 +12,7 @@ from nasih_service.api.routes import get_scorer
 from nasih_service.domain.entities import Business
 from nasih_service.service.scorer import CreditScorer
 
-MODEL_PATH = "models/credit_model.joblib"
+MODEL_PATH = "models/credit_model.json"
 
 
 class ConstantModel:
@@ -56,10 +56,10 @@ def client_factory():
 
 @pytest.fixture(scope="session")
 def real_model():
-    # Session-scoped: read the joblib once for the whole run.
-    from nasih_service.adapters.sklearn_model import SklearnModel
+    # Session-scoped: read the weights file once for the whole run.
+    from nasih_service.adapters.linear_model import LinearModel
 
-    return SklearnModel.load(MODEL_PATH)
+    return LinearModel.load(MODEL_PATH)
 
 
 @pytest.fixture

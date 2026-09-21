@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e ".[dev,api]"
+      - run: pip install -e ".[dev,api,training]"
       - run: ruff check src tests scripts
       - run: mypy src
       - run: lint-imports
@@ -50,7 +50,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e ".[dev,api]"
+      - run: pip install -e ".[dev,api,training]"
       - name: Generate baseline model + golden file
         run: |
           python scripts/generate_baseline_assets.py
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e ".[api]"
+      - run: pip install -e ".[api,training]"
       - name: Generate model artefact for the image
         run: python scripts/generate_baseline_assets.py
 
@@ -112,7 +112,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e ".[api]"
+      - run: pip install -e ".[api,training]"
       - run: python scripts/generate_baseline_assets.py
 
       - name: Log in to GHCR

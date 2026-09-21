@@ -2,7 +2,7 @@
         build up down image-size smoke startup-time
 
 install:
-	pip install -e ".[dev,api]"
+	pip install -e ".[dev,api,training]"
 
 run-batch:
 	python -m nasih_service.batch

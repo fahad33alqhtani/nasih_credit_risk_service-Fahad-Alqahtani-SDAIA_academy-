@@ -15,7 +15,7 @@ image, a three-level test suite, and a CI/CD pipeline.
 src/nasih_service/
 ├── domain/     # entities.py, policies.py         pure business rules, no I/O
 ├── service/    # interfaces.py, scorer.py         use-case orchestration
-├── adapters/   # sklearn_model.py, redis_audit.py the only files touching ML/Redis
+├── adapters/   # linear_model.py, redis_audit.py  the only files touching model/Redis
 ├── api/        # schemas.py, app.py, routes.py    FastAPI wire contract
 ├── config.py                                      typed settings
 ├── logging_setup.py                               JSON logs, trace-id correlated
@@ -24,16 +24,22 @@ src/nasih_service/
 
 The model sits behind a `Model` Protocol (`service/interfaces.py`), injected via
 `app.dependency_overrides` in tests and via the FastAPI `lifespan` in production.
-Swapping `SklearnModel` for XGBoost or a remote model server touches one adapter
+Swapping `LinearModel` for XGBoost or a remote model server touches one adapter
 file, not `service/` or `api/`. `AuditStore` follows the same pattern.
 
 Layering is enforced by `import-linter` (`make check-arch`): domain cannot import
 service, adapters or api; service cannot import adapters or api.
 
+Training and serving are split at the dependency level. `scikit-learn`, `pandas`
+and `numpy` live in the `training` extra and are used by the scripts in
+`scripts/`; the service itself reads the fitted coefficients from
+`models/credit_model.json` and computes the sigmoid with the standard library,
+so none of the training stack is installed in the deployed image.
+
 ## Quick start
 
 ```bash
-pip install -e ".[dev,api]"
+pip install -e ".[dev,api,training]"
 python scripts/generate_baseline_assets.py   # trains the model, writes data + model
 python scripts/generate_golden.py            # records the behavioural golden file
 make test
@@ -125,6 +131,19 @@ default risk. The script asserts both fitted coefficients come out negative
 before saving, so the behavioural directional tests check a property the model
 genuinely has. On the 5,000-row sample the scored book comes out at roughly 75%
 `auto_approve`, 16% `manual_review`, 10% `reject`.
+
+The artefact it writes is a readable JSON file, not a pickle:
+
+```json
+{
+  "version": "v1.0.0",
+  "intercept": 10.43827607182093,
+  "weights": { "cash_flow_log": -0.9394287840992248, "age_months": -0.02146521249659913 }
+}
+```
+
+`LinearModel` scores from those numbers directly. Scores match the scikit-learn
+estimator to within 6e-16, and the golden file pins that.
 
 The data is synthetic and the thresholds are illustrative; this is an
 engineering exercise, not a validated credit model.

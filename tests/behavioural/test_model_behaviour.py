@@ -58,7 +58,7 @@ def test_golden_scores_unchanged():
     """
     import pandas as pd
 
-    from nasih_service.adapters.sklearn_model import SklearnModel
+    from nasih_service.adapters.linear_model import LinearModel
     from nasih_service.domain.entities import Business
 
     assert GOLDEN.exists(), "run scripts/generate_golden.py first"
@@ -67,7 +67,7 @@ def test_golden_scores_unchanged():
     assert header.startswith("# model_version=")
     golden_version = header.split("=", 1)[1].strip()
 
-    model = SklearnModel.load("models/credit_model.joblib")
+    model = LinearModel.load("models/credit_model.json")
     assert golden_version == model.model_version, (
         f"golden file was recorded against {golden_version}, "
         f"model is {model.model_version}")

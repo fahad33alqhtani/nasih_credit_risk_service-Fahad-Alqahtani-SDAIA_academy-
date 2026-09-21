@@ -32,7 +32,7 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 
 # Separate layer so a retrain doesn't invalidate the source layer.
-COPY models/credit_model.joblib models/credit_model.joblib
+COPY models/credit_model.json models/credit_model.json
 
 ENV PATH="/opt/venv/bin:$PATH" PYTHONUNBUFFERED=1
 

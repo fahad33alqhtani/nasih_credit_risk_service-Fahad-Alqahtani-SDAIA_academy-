@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="NASIH_")
 
-    model_path: str = "models/credit_model.joblib"
+    model_path: str = "models/credit_model.json"
     reject_threshold: float = Field(default=0.70, ge=0.0, le=1.0)
     redis_url: str = "redis://localhost:6379/0"
     audit_ttl_seconds: int = Field(default=60 * 60 * 24, gt=0)

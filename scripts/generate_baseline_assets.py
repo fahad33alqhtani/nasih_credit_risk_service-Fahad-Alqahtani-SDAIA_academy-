@@ -3,13 +3,19 @@
 
     python scripts/generate_baseline_assets.py
 
-Writes data/businesses_sample.csv and models/credit_model.joblib.
+Writes data/businesses_sample.csv and models/credit_model.json.
 Seeded, so repeated runs reproduce the same artefacts.
 
 The model is fit on the same feature columns Business.to_features()
 produces, so training and serving share one definition of a feature.
+
+Only the fitted coefficients are exported, not a pickled estimator, so
+the service can score without scikit-learn installed. This is the one
+script that needs the training stack, and it never runs inside the
+deployed image.
 """
-import joblib
+import json
+
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
@@ -56,14 +62,22 @@ def main() -> None:
     # Guard against a retrain that inverts the relationship. The
     # behavioural directional tests assert the same property at the
     # service boundary.
-    coefs = dict(zip(train_features.columns, model.coef_[0]))
+    coefs = {name: float(w) for name, w in zip(train_features.columns, model.coef_[0])}
     assert coefs["cash_flow_log"] < 0, "cash flow must reduce default risk"
     assert coefs["age_months"] < 0, "business age must reduce default risk"
 
-    joblib.dump({"pipeline": model, "version": "v1.0.0"}, "models/credit_model.joblib")
+    bundle = {
+        "version": "v1.0.0",
+        "intercept": float(model.intercept_[0]),
+        "weights": coefs,
+    }
+    with open("models/credit_model.json", "w") as fh:
+        json.dump(bundle, fh, indent=2)
+        fh.write("\n")
+
     print(f"observed default rate: {default.mean():.1%}")
     print(f"coefficients: {coefs}")
-    print(f"wrote data/businesses_sample.csv ({N} rows) and models/credit_model.joblib")
+    print(f"wrote data/businesses_sample.csv ({N} rows) and models/credit_model.json")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import time
 
 import pandas as pd
 
-from nasih_service.adapters.sklearn_model import SklearnModel
+from nasih_service.adapters.linear_model import LinearModel
 from nasih_service.config import Settings
 from nasih_service.domain.entities import Business
 from nasih_service.service.scorer import CreditScorer
@@ -25,7 +25,7 @@ def main() -> None:
     settings = Settings()
 
     t0 = time.perf_counter()
-    model = SklearnModel.load(settings.model_path)
+    model = LinearModel.load(settings.model_path)
     load_duration = time.perf_counter() - t0
     print(f"Loaded model version {model.model_version} in {load_duration:.2f}s")
 

@@ -10,7 +10,7 @@ import pathlib
 
 import pandas as pd
 
-from nasih_service.adapters.sklearn_model import SklearnModel
+from nasih_service.adapters.linear_model import LinearModel
 from nasih_service.domain.entities import Business
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -18,7 +18,7 @@ OUT = ROOT / "tests" / "behavioural" / "golden_scores.csv"
 
 
 def main() -> None:
-    model = SklearnModel.load(ROOT / "models" / "credit_model.joblib")
+    model = LinearModel.load(ROOT / "models" / "credit_model.json")
     df = pd.read_csv(ROOT / "data" / "businesses_sample.csv")
 
     rows = []
