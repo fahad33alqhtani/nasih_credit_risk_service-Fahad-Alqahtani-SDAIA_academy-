@@ -62,7 +62,7 @@ src = ["src"]
 ignore = ["B008"]  # FastAPI's Depends(...) default-argument idiom
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 mypy_path = "src"
 explicit_package_bases = true
 ignore_missing_imports = true
