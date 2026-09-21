@@ -14,7 +14,7 @@ class CreditScorer:
 
     def score(self, business: Business) -> dict:
         features = business.to_features()
-        raw_prob = self.model.predict_proba(features.values)
+        raw_prob = round(self.model.predict_proba(features.values), 6)
         decision = decide(raw_prob, self.reject_threshold)
         result = {
             "business_id": business.business_id,

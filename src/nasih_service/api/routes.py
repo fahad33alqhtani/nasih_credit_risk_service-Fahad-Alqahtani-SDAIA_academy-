@@ -31,7 +31,7 @@ def score(body: ScoreRequest, request: Request,
     result = scorer.score(body.to_domain())
     return ScoreResponse(
         business_id=result["business_id"],
-        default_probability=round(result["default_probability"], 6),
+        default_probability=result["default_probability"],
         decision=result["decision"],
         model_version=result["model_version"],
         trace_id=request.state.trace_id,
