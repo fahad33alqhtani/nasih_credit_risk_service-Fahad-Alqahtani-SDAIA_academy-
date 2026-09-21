@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev,api]"
+      - run: ruff check src tests scripts
+      - run: mypy src
+      - run: lint-imports
+
+      - name: Scan for leaked secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+    env:
+      NASIH_TEST_REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev,api]"
+      - name: Generate baseline model + golden file
+        run: |
+          python scripts/generate_baseline_assets.py
+          python scripts/generate_golden.py
+
+      - name: Fast tests (coverage gate)
+        run: pytest -m "not slow" --durations=10
+
+      - name: Slow tests (behavioural, real Redis)
+        run: pytest -m slow --no-cov
+
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[api]"
+      - name: Generate model artefact for the image
+        run: python scripts/generate_baseline_assets.py
+
+      - name: Build image
+        run: docker build -t nasih-service:ci .
+
+      - name: Check image size (≤ 500 MB)
+        run: |
+          SIZE_BYTES=$(docker inspect nasih-service:ci --format='{{.Size}}')
+          SIZE_MB=$((SIZE_BYTES / 1024 / 1024))
+          echo "image size: ${SIZE_MB} MB"
+          if [ "$SIZE_MB" -gt 500 ]; then
+            echo "::error::Image is ${SIZE_MB} MB, over the 500 MB budget"
+            exit 1
+          fi
+
+      - name: Smoke test via docker compose
+        run: |
+          docker compose up -d --build
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/v1/ready >/dev/null 2>&1; then
+              echo "ready"; break
+            fi
+            sleep 1
+          done
+          curl -fsS http://localhost:8000/v1/health
+          curl -fsS http://localhost:8000/v1/ready
+          curl -fsS -X POST http://localhost:8000/v1/score \
+            -H "content-type: application/json" \
+            -d '{"business_id":"BIZ-CI-SMOKE-01","monthly_cash_flow_sar":20000,"business_age_months":24}'
+          docker compose down
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build-and-smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[api]"
+      - run: python scripts/generate_baseline_assets.py
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push (tagged with the commit SHA)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:main
