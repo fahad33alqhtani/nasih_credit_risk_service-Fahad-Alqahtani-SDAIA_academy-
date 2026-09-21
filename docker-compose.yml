@@ -1,0 +1,34 @@
+services:
+  nasih-api:
+    build: .
+    image: nasih-service:dev
+    ports: ["8000:8000"]
+    environment:
+      NASIH_MODEL_PATH: models/credit_model.joblib
+      NASIH_REDIS_URL: redis://audit-store:6379/0
+    depends_on:
+      audit-store:
+        # service_healthy, not service_started: wait until Redis
+        # answers a ping, otherwise startup races.
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS",
+             "http://localhost:8000/v1/ready"]
+      interval: 10s
+      timeout: 3s
+      start_period: 20s
+      retries: 3
+    mem_limit: 512m
+
+  audit-store:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - audit-data:/data
+
+volumes:
+  audit-data:
