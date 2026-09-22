@@ -141,9 +141,17 @@ The artefact it writes is a readable JSON file, not a pickle:
   "weights": { "cash_flow_log": -0.9394287840992248, "age_months": -0.02146521249659913 }
 }
 ```
-
+ 
 `LinearModel` scores from those numbers directly. Scores match the scikit-learn
 estimator to within 6e-16, and the golden file pins that.
 
 The data is synthetic and the thresholds are illustrative; this is an
 engineering exercise, not a validated credit model.
+## conclusion
+This project was completed as part of the SDA-AIE-113 — Software Engineering Practices for AI Systems training program at SDAIA Academy, under the supervision of Abdullah Khalid AlShahrani.
+
+The portfolio demonstrates the practical application of software engineering practices for AI systems — building a production-style AI/ML service through clean architecture, a well-defined API contract, containerization, a layered automated testing suite, a CI/CD pipeline with branch protection, and safe configuration, secrets, and logging management.
+
+Official SDAIA Academy GitHub:
+
+https://github.com/SDAIAAcademy
