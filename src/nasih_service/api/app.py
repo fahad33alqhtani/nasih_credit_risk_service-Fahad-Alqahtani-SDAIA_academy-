@@ -31,7 +31,10 @@ async def lifespan(app: FastAPI):
     app.state.scorer = CreditScorer(model=model, audit_store=audit_store,
                                     reject_threshold=settings.reject_threshold)
     app.state.settings = settings
+
     yield
+    logger.info("shutting_down")
+    audit_store.close()
 
 
 def create_app() -> FastAPI:

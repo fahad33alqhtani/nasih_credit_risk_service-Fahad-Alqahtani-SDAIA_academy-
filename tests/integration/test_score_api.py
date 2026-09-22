@@ -22,7 +22,7 @@ def test_malformed_corpus_is_not_empty():
 @pytest.mark.integration
 def test_score_contract(client_factory, sample_business):
     client = client_factory(probability=0.93)  # forces reject
-    r = client.post("/v1/score", json=json.loads(sample_business.model_dump_json()))
+    r = client.post("/v1/predict", json=json.loads(sample_business.model_dump_json()))
     assert r.status_code == 200
     body = r.json()
     assert body["decision"] == "reject"
@@ -41,7 +41,7 @@ def test_score_contract(client_factory, sample_business):
 def test_every_decision_branch_reaches_the_wire(client_factory, sample_business,
                                                 probability, expected):
     r = client_factory(probability=probability).post(
-        "/v1/score", json=json.loads(sample_business.model_dump_json()))
+        "/v1/predict", json=json.loads(sample_business.model_dump_json()))
     assert r.status_code == 200
     assert r.json()["decision"] == expected
 
@@ -49,7 +49,7 @@ def test_every_decision_branch_reaches_the_wire(client_factory, sample_business,
 @pytest.mark.integration
 @pytest.mark.parametrize("payload_file", MALFORMED, ids=lambda p: p.name)
 def test_malformed_corpus_rejected(client_factory, payload_file):
-    r = client_factory().post("/v1/score",
+    r = client_factory().post("/v1/predict",
                               content=payload_file.read_bytes(),
                               headers={"content-type": "application/json"})
     assert 400 <= r.status_code < 500, payload_file.name
@@ -63,7 +63,7 @@ def test_score_500_hides_stack_trace(client_factory, sample_business, monkeypatc
         raise ZeroDivisionError("seeded failure")
 
     monkeypatch.setattr("nasih_service.service.scorer.CreditScorer.score", boom)
-    r = client.post("/v1/score", json=json.loads(sample_business.model_dump_json()))
+    r = client.post("/v1/predict", json=json.loads(sample_business.model_dump_json()))
     assert r.status_code == 500
     assert "ZeroDivisionError" not in r.text
     body = r.json()["error"]
@@ -87,7 +87,7 @@ def test_ready_is_503_until_the_model_is_loaded():
 @pytest.mark.integration
 def test_score_is_503_until_the_model_is_loaded():
     client = TestClient(create_app(), raise_server_exceptions=False)
-    r = client.post("/v1/score", json={
+    r = client.post("/v1/predict", json={
         "business_id": "BIZ-TEST-0001",
         "monthly_cash_flow_sar": 20000.0,
         "business_age_months": 24,
@@ -99,7 +99,7 @@ def test_score_is_503_until_the_model_is_loaded():
 @pytest.mark.integration
 def test_trace_id_is_echoed_when_the_caller_supplies_one(client_factory, sample_business):
     r = client_factory().post(
-        "/v1/score",
+        "/v1/predict",
         json=json.loads(sample_business.model_dump_json()),
         headers={"X-Trace-Id": "abc123deadbeef"})
     assert r.status_code == 200
@@ -112,7 +112,7 @@ def test_decision_audit_extension_round_trip(client_factory, sample_business):
     """A scored decision can be read back without resubmitting the input."""
     client = client_factory(probability=0.93)
     post_body = json.loads(sample_business.model_dump_json())
-    r1 = client.post("/v1/score", json=post_body)
+    r1 = client.post("/v1/predict", json=post_body)
     assert r1.status_code == 200
 
     r2 = client.get(f"/v1/decisions/{sample_business.business_id}")

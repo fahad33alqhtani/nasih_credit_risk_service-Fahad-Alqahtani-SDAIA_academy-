@@ -47,7 +47,7 @@ make serve
 ```
 
 ```
-$ curl -s localhost:8000/v1/score -H "content-type: application/json" \
+$ curl -s localhost:8000/v1/predict -H "content-type: application/json" \
     -d '{"business_id":"BIZ-2026-00042","monthly_cash_flow_sar":20000,"business_age_months":24}'
 {"business_id":"BIZ-2026-00042","default_probability":0.650092,"decision":"manual_review","model_version":"v1.0.0","trace_id":"a1b2c3d4e5f60718"}
 
@@ -57,7 +57,7 @@ $ curl -s localhost:8000/v1/decisions/BIZ-2026-00042
 
 ## Decision audit trail
 
-Every `/v1/score` call writes its result to Redis with a 24h TTL through the
+Every `/v1/predict` call writes its result to Redis with a 24h TTL through the
 `AuditStore` port. `GET /v1/decisions/{business_id}` reads a past decision back,
 so a reviewer looking at a case does not have to resubmit the original figures.
 It also gives the Redis service in `docker-compose.yml` a real job rather than

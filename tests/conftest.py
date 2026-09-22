@@ -31,13 +31,16 @@ class InMemoryAuditStore:
 
     def __init__(self):
         self._store: dict[str, dict] = {}
+        self.closed = False
 
     def record(self, business_id: str, decision: dict) -> None:
         self._store[business_id] = decision
 
     def get(self, business_id: str) -> dict | None:
         return self._store.get(business_id)
-
+    
+    def close(self) -> None:
+        self.closed = True
 
 @pytest.fixture
 def client_factory():

@@ -1,5 +1,5 @@
 .PHONY: install run-batch serve lint typecheck check-arch test test-fast test-slow \
-        build up down image-size smoke startup-time
+        image build up down image-size smoke startup-time
 
 install:
 	pip install -e ".[dev,api,training]"
@@ -30,8 +30,11 @@ test-slow:
 
 # ---------- Docker ----------
 
-build:
+image:
 	docker build -t nasih-service:dev .
+
+# Alias kept because the muscle memory is 'make build'.
+build: image
 
 up:
 	docker compose up -d --build
@@ -45,7 +48,7 @@ image-size:
 smoke:
 	curl -fsS localhost:8000/v1/health
 	curl -fsS localhost:8000/v1/ready
-	curl -fsS -X POST localhost:8000/v1/score \
+	curl -fsS -X POST localhost:8000/v1/predict \
 		-H "content-type: application/json" \
 		-d '{"business_id":"BIZ-SMOKE-0001","monthly_cash_flow_sar":20000,"business_age_months":24}'
 

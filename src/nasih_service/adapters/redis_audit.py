@@ -24,7 +24,10 @@ class RedisAuditStore:
     def get(self, business_id: str) -> dict[str, Any] | None:
         raw = self._client.get(self._key(business_id))
         return json.loads(raw) if raw is not None else None
-
+    
+    def close(self) -> None:
+        
+        self._client.close()
     @staticmethod
     def _key(business_id: str) -> str:
         return f"nasih:decision:{business_id}"

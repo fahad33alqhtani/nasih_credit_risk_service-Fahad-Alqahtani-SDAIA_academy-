@@ -25,7 +25,7 @@ def get_scorer(request: Request) -> CreditScorer:
     return scorer
 
 
-@router.post("/score", response_model=ScoreResponse)
+@router.post("/predict", response_model=ScoreResponse)
 def score(body: ScoreRequest, request: Request,
           scorer: CreditScorer = Depends(get_scorer)):
     result = scorer.score(body.to_domain())

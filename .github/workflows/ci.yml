@@ -108,7 +108,7 @@ jobs:
           done
           curl -fsS http://localhost:8000/v1/health
           curl -fsS http://localhost:8000/v1/ready
-          curl -fsS -X POST http://localhost:8000/v1/score \
+          curl -fsS -X POST http://localhost:8000/v1/predict \
             -H "content-type: application/json" \
             -d '{"business_id":"BIZ-CI-SMOKE-01","monthly_cash_flow_sar":20000,"business_age_months":24}'
           docker compose down

@@ -46,7 +46,7 @@ training script and the behavioural suite independently.
 ## 5. `NASIH_REDIS_URL` is validated at startup, not on first use
 
 `config.py` runs a `field_validator` on `redis_url` at process start. Without
-it, a typo'd environment variable would only surface when the first `/v1/score`
+it, a typo'd environment variable would only surface when the first `/v1/predict`
 call tried to write an audit record, by which point the container has already
 reported itself healthy and started taking traffic.
 
