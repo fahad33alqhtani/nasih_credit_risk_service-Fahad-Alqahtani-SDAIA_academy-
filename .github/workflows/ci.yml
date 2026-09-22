@@ -10,9 +10,6 @@ permissions:
   contents: read
   packages: write
 
-env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
-
 jobs:
   lint-and-typecheck:
     runs-on: ubuntu-latest
@@ -128,6 +125,18 @@ jobs:
       - run: pip install -e ".[api,training]"
       - run: python scripts/generate_baseline_assets.py
 
+      # A Docker reference has to be lowercase and cannot end in a
+      # separator. A GitHub repository name is under no such rule, so
+      # github.repository cannot be used as an image name unmodified.
+      - name: Derive the image name
+        id: image
+        run: |
+          name=$(echo "ghcr.io/${{ github.repository }}" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[._-]+$//')
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "publishing to $name"
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -141,5 +150,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.IMAGE_NAME }}:main
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:main
