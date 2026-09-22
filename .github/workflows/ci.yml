@@ -15,29 +15,34 @@ env:
 
 jobs:
   lint-and-typecheck:
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
-      with:
-        # Full history: a secret that was committed and later removed
-        # is still in the history, so scanning only the tip would miss
-        # it.
-        fetch-depth: 0
-    - uses: actions/setup-python@v5
-      with:
-        python-version: "3.12"
-    - run: pip install -e ".[dev,api,training]"
-    - run: ruff check src tests scripts
-    - run: mypy src
-    - run: lint-imports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: a secret that was committed and later removed
+          # is still in the history, so scanning only the tip would miss
+          # it.
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[dev,api,training]"
+      - run: ruff check src tests scripts
+      - run: mypy src
+      - run: lint-imports
 
-    - name: Scan for leaked secrets
-      run: |
-        curl -sSfL "https://github.com/zricethezav/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
-          | tar -xz -C /tmp gitleaks
-        /tmp/gitleaks detect --source . --redact -v --exit-code 1
-      env:
-        GITLEAKS_VERSION: 8.24.3
+      # Run gitleaks directly rather than through gitleaks-action. The
+      # action derives a commit range from the push event and builds
+      # <first-commit>^..<head>, which has no valid parent on a
+      # repository's first push. Scanning the whole history is both
+      # simpler and stricter.
+      - name: Scan for leaked secrets
+        run: |
+          curl -sSfL "https://github.com/zricethezav/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /tmp gitleaks
+          /tmp/gitleaks detect --source . --redact -v --exit-code 1
+        env:
+          GITLEAKS_VERSION: 8.24.3
 
   test:
     runs-on: ubuntu-latest
